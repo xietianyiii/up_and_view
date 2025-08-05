@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shapefile Map Viewer</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+<body>
+    <h1>Shapefile Map Viewer</h1>
+    <label for="table-select">Select a Table:</label>
+    <select id="table-select">
+        <!-- Options will be populated dynamically -->
+    </select>
+    <div id="map" style="width: 800px; height: 600px; margin-top: 20px;margin-left: 20vw;"></div>
+    
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        var map = L.map('map').setView([0, 0], 2);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(map);
+
+        function loadTableData(tableName) {
+            fetch(`http://127.0.0.1:5000/data/${tableName}`)
+                .then(response => response.json())
+                .then(data => {
+                    // 清除现有的图层
+                    if (window.currentLayer) {
+                        map.removeLayer(window.currentLayer);
+                    }
+
+                    // 添加新图层
+                    window.currentLayer = L.geoJSON(data).addTo(map);
+
+                    // 缩放到新图层的边界
+                    map.fitBounds(window.currentLayer.getBounds());
+                });
+        }
+
+        // 加载表名列表
+        fetch('http://127.0.0.1:5000/tables')
+            .then(response => response.json())
+            .then(tables => {
+                const select = document.getElementById('table-select');
+                tables.forEach(table => {
+                    const option = document.createElement('option');
+                    option.value = table;
+                    option.textContent = table;
+                    select.appendChild(option);
+                });
+
+                // 默认加载第一个表的数据
+                if (tables.length > 0) {
+                    loadTableData(tables[0]);
+                }
+            });
+
+        // 监听表名选择变化事件
+        document.getElementById('table-select').addEventListener('change', function() {
+            loadTableData(this.value);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>影像上传及查看</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
+    <link href="//unpkg.com/layui@2.9.14/dist/css/layui.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #eef2f5;
+            margin: 0;
+            padding: 0;
+            color: #34495e;
+        }
+
+        h2,
+        h5 {
+            text-align: center;
+            color: #2c3e50;
+        }
+
+        h2 {
+            font-size: 1.5em;
+            color: #2980b9;
+        }
+
+        h5 {
+            margin-top: 10px;
+            color: #3e4748;
+        }
+
+        #main-container {
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        #sidebar {
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        #map-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        #map-export {
+            height: 600px;
+            display: flex;
+            border-radius: 3px;
+            border: 2px solid #bdc3c7;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #map {
+            flex: 7;
+        }
+
+        #attributes-card {
+            overflow-y: auto;
+            padding: 20px;
+            background-color: #ffffff;
+            flex: 2;
+        }
+
+        #all-attributes-card {
+            overflow-y: auto;
+            padding: 20px;
+            background-color: #ffffff;
+            flex: 2;
+            display: none;
+            /* 默认隐藏 */
+        }
+
+        #fields-card {
+            overflow-y: auto;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #bdc3c7;
+            background-color: #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        #fields-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .field-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .field-column {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            width: 150px;
+        }
+
+        #uploadForm {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        #shapefiles {
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            transition: border-color 0.3s ease;
+        }
+
+        #shapefiles:focus {
+            border-color: #3498db;
+        }
+
+        button {
+            background-color: #3498db;
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        .upload-button {
+            background-color: #67c23a;
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+            transform: scale(1.05);
+        }
+
+        .upload-button:hover {
+            background-color: #379b05;
+            transform: scale(1.05);
+        }
+
+        #attributes,
+        #clicked-attributes,
+        #all-attributes {
+            font-family: monospace;
+            white-space: pre-wrap;
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            margin-top: 10px;
+            overflow-y: auto;
+            max-height: 500px;
+        }
+
+        #attributes-card::-webkit-scrollbar,
+        #fields-card::-webkit-scrollbar,
+        #clicked-attributes-card::-webkit-scrollbar,
+        #all-attributes-card::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #attributes-card::-webkit-scrollbar-thumb,
+        #fields-card::-webkit-scrollbar-thumb,
+        #clicked-attributes-card::-webkit-scrollbar-thumb,
+        #all-attributes-card::-webkit-scrollbar-thumb {
+            background-color: #3498db;
+            border-radius: 8px;
+        }
+
+        label {
+            margin-left: 10px;
+        }
+
+        input[type="checkbox"] {
+            margin-right: 5px;
+        }
+
+        .card {
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #bdc3c7;
+            background-color: #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            height: auto;
+            overflow-y: auto;
+        }
+
+        .card h3 {
+            color: #2980b9;
+            text-align: center;
+        }
+
+        .card h5 {
+            color: #3e4748;
+            text-align: center;
+        }
+
+        .card::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .card::-webkit-scrollbar-thumb {
+            background-color: #3498db;
+            border-radius: 8px;
+        }
+
+        #table-select-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        table.dataTable thead th,
+        table.dataTable thead td {
+            border-bottom: none;
+        }
+
+        table.dataTable tfoot th,
+        table.dataTable tfoot td {
+            display: none;
+        }
+
+        table.dataTable.no-footer {
+            border-bottom: none;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: none;
+        }
+
+        th {
+            background-color: white;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        /* Transfer box styles */
+        .transfer-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .transfer-list {
+            width: 200px;
+            height: 300px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            overflow-y: auto;
+            list-style: none;
+            padding: 0;
+        }
+
+        .transfer-list li {
+            padding: 8px;
+            cursor: pointer;
+        }
+
+        .transfer-list li:hover {
+            background-color: #3498db;
+            color: #fff;
+        }
+
+        .transfer-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .close-button {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            background-color: transparent;
+            border: none;
+            color: #2980b9;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .close-button:hover {
+            color: #3498db;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="main-container">
+        <div id="sidebar">
+            <div class="card">
+                <h3>选择要查看的影像</h3>
+                <div id="ID-tree-demo"></div>
+            </div>
+            <div class="card">
+                <h2>上传文件</h2>
+                <h5>在上传shpfile文件时,请同时上传.shp .shx .dbf</h5>
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <input type="file" id="shapefiles" name="shapefiles" accept=".shp,.shx,.dbf" multiple
+                            style="display: none;">
+                        <button type="button" id="custom-button" class="select-button"
+                            onclick="document.getElementById('shapefiles').click()">选择文件</button>
+                        <div id="file-names" style="margin-top: 10px; font-weight: 500; text-align: center;"></div>
+                        <button type="button" class="upload-button" onclick="uploadShapefile()"
+                            style="margin-top: 10px;">Upload</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div id="map-container">
+            <div id="map-export">
+                <div id="map"></div>
+                <div id="attributes-card">
+                    <h3>选择的属性</h3>
+                    <div id="attributes"></div>
+                </div>
+            </div>
+
+            <div id="clicked-attributes-card" class="card">
+                <h3>点击特征属性</h3>
+                <button class="close-button" onclick="openTransferBox()">⚙️</button>
+                <div id="clicked-attributes"></div>
+            </div>
+
+            <div id="fields-card">
+                <h3>当前影像可选属性</h3>
+                <div id="fields-container"></div>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="exportMap()">导出地图</button>
+                <button onclick="toggleAllAttributes()">Open</button>
+            </div>
+        </div>
+    </div>
+    <div id="all-attributes-card" class="card">
+        <h3>当前地图所有属性</h3>
+        <div id="all-attributes"></div>
+    </div>
+
+    <!-- Transfer Box Dialog -->
+    <div id="transfer-box-dialog" class="card" style="display: none;">
+        <h3>属性选择器</h3>
+        <button class="close-button" onclick="closeTransferBox()">✖️</button>
+        <div class="transfer-box">
+            <ul id="available-fields" class="transfer-list"></ul>
+            <div class="transfer-buttons">
+                <button onclick="moveSelected('#available-fields', '#selected-fields')">&gt;&gt;</button>
+                <button onclick="moveSelected('#selected-fields', '#available-fields')">&lt;&lt;</button>
+            </div>
+            <ul id="selected-fields" class="transfer-list"></ul>
+        </div>
+    </div>
+
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="//unpkg.com/layui@2.9.14/dist/layui.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script>
+        var map = L.map('map').setView([0, 0], 2);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(map);
+
+        function loadTableData(tableName) {
+            fetch(`http://127.0.0.1:5000/data/${tableName}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Clear existing layers
+                    if (window.currentLayer) {
+                        map.removeLayer(window.currentLayer);
+                    }
+
+                    // Add new layer and set up click events for features
+                    window.currentLayer = L.geoJSON(data, {
+                        onEachFeature: function (feature, layer) {
+                            layer.on('click', function () {
+                                map.fitBounds(layer.getBounds());
+                                if (feature.properties) {
+                                    showClickedInfo(feature.properties);
+                                    loadFeatureAttributes(tableName, feature.properties.id);
+                                } else {
+                                    showClickedInfo({});
+                                }
+                            });
+                        }
+                    }).addTo(map);
+
+                    // Zoom to new layer bounds
+                    map.fitBounds(window.currentLayer.getBounds());
+
+                    // Load all attributes for the current map
+                    loadAllAttributes(tableName);
+                })
+                .catch(error => {
+                    alert('Error loading data: ' + error.message);
+                    console.error('Error loading data:', error);
+                });
+        }
+
+        function loadTableFields(tableNames) {
+            const fieldsContainer = document.getElementById('fields-container');
+            fieldsContainer.innerHTML = '';
+
+            tableNames.forEach(tableName => {
+                fetch(`http://127.0.0.1:5000/fields/${tableName}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const fields = data.fields;
+                        const rows = data.data;
+
+                        fieldsContainer.innerHTML = ''; // Clear previous fields if any
+
+                        fields.forEach(field => {
+                            const fieldDiv = document.createElement('div');
+                            fieldDiv.classList.add('field-item');
+
+                            const checkbox = document.createElement('input');
+                            checkbox.type = 'checkbox';
+                            checkbox.id = field;
+                            checkbox.value = field;
+                            checkbox.addEventListener('change', () => updateAttributes(rows, fields));
+
+                            const label = document.createElement('label');
+                            label.htmlFor = field;
+                            label.textContent = field;
+
+                            fieldDiv.appendChild(checkbox);
+                            fieldDiv.appendChild(label);
+                            fieldsContainer.appendChild(fieldDiv);
+                        });
+                    });
+            });
+
+        }
+
+        function updateAttributes(rows, fields) {
+            const checkboxes = document.querySelectorAll('#fields-container input[type="checkbox"]:checked');
+            const selectedFields = Array.from(checkboxes).map(cb => cb.value);
+            const attributesDiv = document.getElementById('attributes');
+            attributesDiv.innerHTML = '';
+
+            rows.forEach(row => {
+                const selectedProps = selectedFields.reduce((acc, field) => {
+                    if (row[field] !== undefined) {
+                        acc[field] = row[field];
+                    }
+                    return acc;
+                }, {});
+
+                const propDiv = document.createElement('div');
+                propDiv.textContent = JSON.stringify(selectedProps, null, 2);
+                attributesDiv.appendChild(propDiv);
+            });
+        }
+
+        function onEachFeature(feature, layer) {
+            layer.on('click', function () {
+                map.fitBounds(layer.getBounds());
+                const properties = feature.properties;
+                const infoDiv = document.getElementById('clicked-attributes');
+                if (properties) {
+                    showClickedInfo(feature.properties);
+                    loadFeatureAttributes(tableName, feature.properties.id);
+                } else {
+                    showClickedInfo({});
+                }
+            });
+        }
+
+
+        function generateTable(data) {
+            if (data.length === 0) {
+                return '<p>No data available.</p>';
+            }
+
+            var table = '<table class="display" style="width:100%"><thead><tr>';
+            for (var key in data[0]) {
+                if (data[0].hasOwnProperty(key)) {
+                    table += '<th>' + key + '</th>';
+                }
+            }
+            table += '</tr></thead><tbody>';
+            data.forEach(function (item) {
+                table += '<tr>';
+                for (var key in item) {
+                    if (item.hasOwnProperty(key)) {
+                        table += '<td>' + item[key] + '</td>';
+                    }
+                }
+                table += '</tr>';
+            });
+            table += '</tbody></table>';
+            return table;
+        }
+
+
+        function initializeDataTable(selector, isClickedAttributes) {
+            $(selector).DataTable({
+                dom: isClickedAttributes ? 't' : 'lfrtip',
+                paging: !isClickedAttributes,
+                searching: !isClickedAttributes,
+                info: !isClickedAttributes
+            });
+        }
+
+        function uploadShapefile() {
+            const formData = new FormData();
+            const fileInput = document.getElementById('shapefiles');
+
+            if (fileInput.files.length === 0) {
+                alert("Please select files to upload.");
+                return;
+            }
+
+            for (let i = 0; i < fileInput.files.length; i++) {
+                formData.append('shapefiles', fileInput.files[i]);
+            }
+
+            fetch('http://127.0.0.1:5000/upload', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(result => {
+                    alert(result.join("\n"));
+                    loadTableList();
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function loadTableList() {
+            fetch('http://127.0.0.1:5000/tables')
+                .then(response => response.json())
+                .then(tables => {
+                    const container = document.getElementById('ID-tree-demo');
+                    const tree = layui.tree;
+
+                    container.innerHTML = '';
+                    tree.render({
+                        elem: '#ID-tree-demo',
+                        data: tables.map(table => ({
+                            title: table,
+                            id: table
+                        })),
+                        showCheckbox: true,
+                        id: 'demo-id-1',
+                        isJump: true,
+                        click: function (obj) {
+                            var data = obj.data;
+                            layer.msg('状态：' + obj.state + '<br>节点数据：' + JSON.stringify(data));
+                        },
+                        oncheck: function (obj) {
+                            const checkedData = tree.getChecked('demo-id-1');
+                            const selectedTables = checkedData.map(item => item.id);
+                            loadTableData(selectedTables);
+                        }
+                    });
+                });
+        }
+
+        function toggleAllAttributes() {
+            const card = document.getElementById('all-attributes-card');
+            if (card.style.display === 'none') {
+                loadAllAttributes();
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        }
+
+        function loadAllAttributes() {
+            const tables = document.querySelectorAll('#ID-tree-demo input[type="checkbox"]:checked');
+            const tableNames = Array.from(tables).map(cb => cb.value);
+            const allAttributesDiv = document.getElementById('all-attributes');
+            allAttributesDiv.innerHTML = '';
+
+            tableNames.forEach(tableName => {
+                fetch(`http://127.0.0.1:5000/fields/${tableName}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        allAttributesDiv.innerHTML += generateTable(data.data);
+                        initializeDataTable('#all-attributes table', false);
+                    })
+                    .catch(error => console.error('Error loading all attributes:', error));
+            });
+        }
+
+        function loadFeatureAttributes(tableName, featureId) {
+            fetch(`http://127.0.0.1:5000/fields/${tableName}`)
+                .then(response => response.json())
+                .then(data => {
+                    const featureAttributes = data.data.find(item => item.gid === featureId);
+                    showClickedInfo(featureAttributes ? featureAttributes : {});
+                })
+                .catch(error => {
+                    alert('Error loading attributes: ' + error.message);
+                    console.error('Error loading attributes:', error);
+                });
+        }
+
+        function showClickedInfo(properties) {
+            var infoDiv = document.getElementById('clicked-attributes');
+            if (Object.keys(properties).length === 0) {
+                infoDiv.innerHTML = '<p>No properties found.</p>';
+            } else {
+                infoDiv.innerHTML = generateTable([properties]);
+                initializeDataTable('#clicked-attributes table', true);
+            }
+        }
+
+
+        function exportMap() {
+            const mapExport = document.getElementById('map-export');
+
+            // 延迟以确保所有内容都已加载
+            setTimeout(() => {
+                html2canvas(mapExport, {
+                    useCORS: true,
+                    allowTaint: false,
+                    logging: true,
+                    onclone: (document) => {
+                        document.getElementById('map-export').style.backgroundColor = "#eef2f5";
+                    }
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.href = canvas.toDataURL('image/png');
+                    link.download = 'map_export.png';
+                    link.click();
+                });
+            }, 1000); // 延迟1秒，确保内容加载完毕
+        }
+
+        document.addEventListener('DOMContentLoaded', loadTableList);
+
+        function openTransferBox() {
+            const dialog = document.getElementById('transfer-box-dialog');
+            const availableFieldsList = document.getElementById('available-fields');
+            const clickedAttributes = document.getElementById('clicked-attributes').querySelector('table');
+
+            // Clear and populate the available fields list
+            availableFieldsList.innerHTML = '';
+            if (clickedAttributes) {
+                const headers = Array.from(clickedAttributes.querySelectorAll('th')).map(th => th.textContent);
+
+                headers.forEach(header => {
+                    const li = document.createElement('li');
+                    li.textContent = header;
+                    li.onclick = () => li.classList.toggle('selected');
+                    availableFieldsList.appendChild(li);
+                });
+            }
+
+            dialog.style.display = 'block';
+        }
+
+        function closeTransferBox() {
+            const dialog = document.getElementById('transfer-box-dialog');
+            dialog.style.display = 'none';
+        }
+
+        function moveSelected(fromSelector, toSelector) {
+            const fromList = document.querySelector(fromSelector);
+            const toList = document.querySelector(toSelector);
+            const selectedItems = Array.from(fromList.querySelectorAll('.selected'));
+
+            selectedItems.forEach(item => {
+                item.classList.remove('selected');
+                toList.appendChild(item);
+            });
+
+            updateSelectedAttributes();
+        }
+
+        function updateSelectedAttributes() {
+            const selectedFields = Array.from(document.querySelector('#selected-fields').children)
+                .map(li => li.textContent);
+            const attributesDiv = document.getElementById('attributes');
+            const clickedAttributes = document.getElementById('clicked-attributes').querySelector('table');
+
+            attributesDiv.innerHTML = '';
+
+            if (clickedAttributes) {
+                const rows = clickedAttributes.querySelectorAll('tr');
+
+                rows.forEach(row => {
+                    const rowData = Array.from(row.children)
+                        .reduce((acc, cell, index) => {
+                            const header = clickedAttributes.querySelectorAll('th')[index].textContent;
+                            if (selectedFields.includes(header)) {
+                                acc[header] = cell.textContent;
+                            }
+                            return acc;
+                        }, {});
+
+                    const propDiv = document.createElement('div');
+                    propDiv.textContent = JSON.stringify(rowData, null, 2);
+                    attributesDiv.appendChild(propDiv);
+                });
+            }
+        }
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Picker Rectangle</title>
+    <style>
+        #rectangle {
+            width: 200px;
+            height: 100px;
+            background-color: white;
+            border: 5px solid #3498db; /* 初始边框颜色 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            margin: 50px auto;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            position: relative; /* 定位为相对位置，以便绝对定位的子元素可以基于它 */
+        }
+
+        #colorPicker {
+            position: absolute;
+            bottom: 110%; /* 在矩形的上方 */
+            left: 50%;
+            transform: translateX(-50%);
+            visibility: hidden; /* 初始隐藏颜色选择器 */
+        }
+    </style>
+</head>
+<body>
+
+<div id="rectangle">点击我选择颜色
+    <input type="color" id="colorPicker">
+</div>
+
+<script>
+    const rectangle = document.getElementById('rectangle');
+    const colorPicker = document.getElementById('colorPicker');
+
+    rectangle.addEventListener('click', () => {
+        // 显示颜色选择器
+        colorPicker.style.visibility = 'visible';
+        colorPicker.focus(); // 聚焦颜色选择器以便用户立即进行选择
+    });
+
+    // 当用户选择颜色后，改变矩形的边框颜色
+    colorPicker.addEventListener('input', (event) => {
+        rectangle.style.borderColor = event.target.value;
+    });
+
+    // 当颜色选择器失去焦点时，隐藏它
+    colorPicker.addEventListener('blur', () => {
+        colorPicker.style.visibility = 'hidden';
+    });
+</script>
+
+</body>
+</html>

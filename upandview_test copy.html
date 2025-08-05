@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Layui 穿梭框美化示例</title>
+  <!-- 请勿在项目正式环境中引用该 layui.css 地址 -->
+  <link href="//unpkg.com/layui@2.9.14/dist/css/layui.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f2f2f2;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .layui-transfer {
+      border: none;
+    }
+
+    .layui-transfer-header {
+      background-color: #f5f7fa;
+      color: #ffffff;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .layui-transfer-box {
+      border: 1px solid #e6e6e6;
+      border-radius: 8px;
+    }
+
+    .layui-transfer-box-main {
+      max-height: 300px; /* 可设置最大高度 */
+      overflow-y: auto; /* 超出时滚动 */
+    }
+
+    /* Customize checkbox colors */
+    .layui-form-checkbox[lay-skin="primary"] i {
+      border-color: #ecf5ff; /* Unchecked checkbox border color */
+    }
+    .layui-form-checked[lay-skin="primary"] i {
+      background-color: #409eff; /* Checked checkbox background color */
+      border-color: #409eff; /* Checked checkbox border color */
+    }
+    
+    /* Customize button colors */
+    .layui-transfer-active .layui-btn {
+      background-color: #409eff; /* Button background color */
+      border-color: #409eff; /* Button border color */
+      color: #ffffff; /* Button text color */
+    }
+    .layui-transfer-active .layui-btn:hover {
+      background-color: #409eff; /* Button hover background color */
+      border-color: #409eff; /* Button hover border color */
+    }
+    
+  </style>
+</head>
+<body>
+<div id="transfer-demo"></div>
+
+<!-- 请勿在项目正式环境中引用该 layui.js 地址 -->
+<script src="//unpkg.com/layui@2.9.14/dist/layui.js"></script>
+<script>
+layui.use(function(){
+  var transfer = layui.transfer;
+  // 数据
+  var data = [
+    {"value": "1", "title": "李白"},
+    {"value": "2", "title": "杜甫"},
+    {"value": "3", "title": "苏轼"},
+    {"value": "4", "title": "李清照"},
+    {"value": "5", "title": "鲁迅", "disabled": true},
+    {"value": "6", "title": "巴金"},
+    {"value": "7", "title": "冰心"},
+    {"value": "8", "title": "矛盾"},
+    {"value": "9", "title": "贤心"}
+  ];
+  // 渲染
+  transfer.render({
+    elem: '#transfer-demo',
+    data: data,
+    title: ['文人墨客', '获奖文人'],
+    showSearch: true
+  });
+});
+</script>
+</body>
+</html>
